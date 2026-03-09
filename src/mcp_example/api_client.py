@@ -102,7 +102,7 @@ class ExampleClient:
 
                     raise ExampleAPIError(response.status, error_msg, result)
 
-                return result  # type: ignore[no-any-return]
+                return result
 
         except ClientError as e:
             raise ExampleAPIError(500, f"Network error: {str(e)}") from e

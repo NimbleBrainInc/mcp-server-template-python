@@ -14,6 +14,7 @@ Getting started:
 import logging
 import os
 import sys
+from importlib.resources import files
 
 from fastmcp import Context, FastMCP
 from starlette.requests import Request
@@ -31,8 +32,16 @@ logger = logging.getLogger("mcp_example")
 
 logger.info("Example server module loading...")
 
+SKILL_CONTENT = files("mcp_example").joinpath("SKILL.md").read_text()
+
 # Create MCP server
-mcp = FastMCP("Example")
+mcp = FastMCP(
+    "Example",
+    instructions=(
+        "Before using tools, read the skill://example/usage resource "
+        "for tool selection guidance and workflow patterns."
+    ),
+)
 
 # Global client instance (lazy initialization)
 _client: ExampleClient | None = None
@@ -108,6 +117,17 @@ async def get_item(
         if ctx:
             ctx.error(f"API error: {e.message}")
         raise
+
+
+# ============================================================================
+# Resources
+# ============================================================================
+
+
+@mcp.resource("skill://example/usage")
+def skill_usage() -> str:
+    """Usage guide for the Example MCP server tools."""
+    return SKILL_CONTENT
 
 
 # ============================================================================

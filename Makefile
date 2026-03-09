@@ -2,7 +2,7 @@
 BUNDLE_NAME = mcp-example
 VERSION ?= 0.1.0
 
-.PHONY: help install dev-install format format-check lint lint-fix typecheck test test-cov clean run run-http check all bump bundle
+.PHONY: help install dev-install format format-check lint lint-fix typecheck test test-integration test-llm test-cov clean run run-http check all bump bundle
 
 help: ## Show this help message
 	@echo 'Usage: make [target]'
@@ -33,6 +33,12 @@ typecheck: ## Type check code with ty
 
 test: ## Run tests with pytest
 	uv run pytest tests/ -v
+
+test-integration: ## Run integration tests (requires EXAMPLE_API_KEY)
+	uv run pytest tests-integration/ -v --ignore=tests-integration/test_skill_llm.py
+
+test-llm: ## Run LLM smoke tests (requires EXAMPLE_API_KEY + ANTHROPIC_API_KEY)
+	uv run pytest tests-integration/test_skill_llm.py -v
 
 test-cov: ## Run tests with coverage
 	uv run pytest tests/ -v --cov=src/mcp_example --cov-report=term-missing
