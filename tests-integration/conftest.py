@@ -9,8 +9,11 @@ import os
 
 import pytest
 import pytest_asyncio
+from dotenv import load_dotenv
 
 from mcp_example.api_client import ExampleClient
+
+load_dotenv()
 
 
 def pytest_configure(config):
