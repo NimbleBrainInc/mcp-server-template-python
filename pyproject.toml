@@ -64,6 +64,7 @@ dev = [
     "python-dotenv>=1.0.0",
     "ruff>=0.13.0",
     "ty>=0.0.20",
+    "anthropic>=0.40.0",
 ]
 
 [project.urls]
