@@ -1,18 +1,18 @@
-# Example MCP Server — Skill Guide
+---
+name: mcp-example-service
+description: Provides knowledge of how to use MCP example most effectively. It's loaded into the agent's context when running the MCP.
+---
 
 ## Tools
 
+<!-- TODO: Add a row for each @mcp.tool() in server.py -->
 | Tool | Use when... |
 |------|-------------|
-| `list_items` | You need to browse or search items |
-| `get_item` | You have an item ID and need full details |
 
 ## Context Reuse
 
-- Use the `id` from `list_items` results when calling `get_item`
+<!-- TODO: Describe which tool outputs feed into subsequent tool calls -->
 
 ## Workflows
 
-### 1. Browse and Inspect
-1. `list_items` with a limit to get an overview
-2. For interesting items: `get_item` to get full details
+<!-- TODO: Add 2-3 multi-step workflows showing how to chain tools -->

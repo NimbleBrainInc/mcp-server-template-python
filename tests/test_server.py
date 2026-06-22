@@ -35,8 +35,8 @@ class TestSkillResource:
         async with Client(mcp_server) as client:
             contents = await client.read_resource("skill://example/usage")
             text = contents[0].text if hasattr(contents[0], "text") else str(contents[0])
-            assert "list_items" in text
-            assert "get_item" in text
+            assert len(text.strip()) > 0
+            assert "## Tools" in text
 
     @pytest.mark.asyncio
     async def test_skill_content_matches_constant(self, mcp_server):
