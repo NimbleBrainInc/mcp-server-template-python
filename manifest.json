@@ -25,5 +25,16 @@
         "EXAMPLE_API_KEY": "${user_config.api_key}"
       }
     }
+  },
+  "_meta": {
+    "org.mpaktrust": {
+      "permissions": {
+        "filesystem": "read",
+        "network": "outbound",
+        "environment": "read",
+        "subprocess": "none",
+        "native": "none"
+      }
+    }
   }
 }

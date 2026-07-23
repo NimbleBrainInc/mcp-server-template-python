@@ -47,7 +47,7 @@ mcp = FastMCP(
 _client: ExampleClient | None = None
 
 
-def get_client(ctx: Context | None = None) -> ExampleClient:
+async def get_client(ctx: Context | None = None) -> ExampleClient:
     """Get or create the API client instance."""
     global _client
     if _client is None:
@@ -55,7 +55,7 @@ def get_client(ctx: Context | None = None) -> ExampleClient:
         if not api_key:
             msg = "EXAMPLE_API_KEY environment variable is required"
             if ctx:
-                ctx.error(msg)
+                await ctx.error(msg)
             raise ValueError(msg)
         _client = ExampleClient(api_key=api_key)
     return _client
@@ -87,12 +87,12 @@ async def list_items(
     Returns:
         List of items
     """
-    client = get_client(ctx)
+    client = await get_client(ctx)
     try:
         return await client.list_items(limit=limit)
     except ExampleAPIError as e:
         if ctx:
-            ctx.error(f"API error: {e.message}")
+            await ctx.error(f"API error: {e.message}")
         raise
 
 
@@ -110,12 +110,12 @@ async def get_item(
     Returns:
         Item details
     """
-    client = get_client(ctx)
+    client = await get_client(ctx)
     try:
         return await client.get_item(item_id)
     except ExampleAPIError as e:
         if ctx:
-            ctx.error(f"API error: {e.message}")
+            await ctx.error(f"API error: {e.message}")
         raise
 
 

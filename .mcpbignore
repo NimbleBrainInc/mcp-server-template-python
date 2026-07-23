@@ -30,6 +30,7 @@ __pycache__/
 /build/
 /dist/
 /tests/
+/tests-integration/
 /test/
 /e2e/
 /examples/
