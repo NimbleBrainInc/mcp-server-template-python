@@ -29,8 +29,8 @@ make check
 These skills automate common development tasks:
 
 ```bash
-mpak skill install @nimblebraininc/nimblebrain-contributor
-mpak skill install @nimblebraininc/build-mcpb
+npx skills add nimblebraininc/skills --skill contributor --agent claude-code -y
+npx skills add nimblebraininc/skills --skill mcpb --agent claude-code -y
 ```
 
 ## Development Workflow
@@ -92,5 +92,4 @@ Or simply: `make check`
 ### For Companion Skills
 - SKILL.md with complete frontmatter
 - Composes 2+ tools into a workflow
-- `mpak skill validate` passes
 - At least 2 usage examples

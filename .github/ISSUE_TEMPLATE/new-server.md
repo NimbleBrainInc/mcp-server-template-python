@@ -30,21 +30,16 @@ assignees: ''
 ## Getting Started
 
 ```bash
-# 1. Install development skills
-mpak skill install @nimblebraininc/build-mcp
-mpak skill install @nimblebraininc/validate-mcpb
-mpak skill install @nimblebraininc/author-skills-for-server
+# 1. Install the build skill
+npx skills add nimblebraininc/skills --skill mcpb --agent claude-code -y
 
 # 2. Create repo from template
 gh repo create NimbleBrainInc/mcp-<name> --template NimbleBrainInc/mcp-server-template --public --clone
 
-# 3. Use /build-mcp to scaffold, or start from the template code
+# 3. Run /mcpb — scaffolds the server, implements tools, validates the
+#    bundle (MTF scan), and authors companion skills, end to end
 
-# 4. Implement tools, run make check
-
-# 5. Validate bundle with /validate-mcpb
-
-# 6. Author companion skills with /author-skills-for-server
+# 4. Iterate with `make check` as you build
 ```
 
 ## Definition of Done
