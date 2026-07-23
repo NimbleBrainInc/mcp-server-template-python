@@ -27,7 +27,7 @@ jobs:
         run: npx @anthropic-ai/mcpb pack
 
       - name: Run MTF scanner
-        run: uvx mpak-scanner scan *.mcpb --json > scan-results.json
+        run: uvx mpak-scanner scan *.mcpb --json -o scan-results.json
 
       - name: Check for critical/high findings
         run: |
