@@ -37,7 +37,6 @@
 ### Skills (if applicable)
 - [ ] SKILL.md with complete frontmatter + metadata
 - [ ] Composes 2+ tools into a workflow
-- [ ] `mpak skill validate` passes
 - [ ] At least 2 usage examples
 
 ## Testing

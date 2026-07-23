@@ -31,9 +31,9 @@ assignees: ''
 
 ```bash
 # 1. Install development skills
-mpak skill install @nimblebraininc/build-mcp
-mpak skill install @nimblebraininc/validate-mcpb
-mpak skill install @nimblebraininc/author-skills-for-server
+npx skills add nimblebraininc/skills --skill build-mcp
+npx skills add nimblebraininc/skills --skill validate-mcpb
+npx skills add nimblebraininc/skills --skill author-skills-for-server
 
 # 2. Create repo from template
 gh repo create NimbleBrainInc/mcp-<name> --template NimbleBrainInc/mcp-server-template --public --clone
