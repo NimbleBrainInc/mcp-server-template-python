@@ -29,8 +29,8 @@ make check
 These skills automate common development tasks:
 
 ```bash
-npx skills add nimblebraininc/skills --skill nimblebrain-contributor
-npx skills add nimblebraininc/skills --skill build-mcpb
+npx skills add nimblebraininc/skills --skill contributor --agent claude-code -y
+npx skills add nimblebraininc/skills --skill mcpb --agent claude-code -y
 ```
 
 ## Development Workflow
