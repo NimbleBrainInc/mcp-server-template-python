@@ -29,7 +29,7 @@
   "_meta": {
     "org.mpaktrust": {
       "permissions": {
-        "filesystem": "none",
+        "filesystem": "read",
         "network": "outbound",
         "environment": "read",
         "subprocess": "none",
