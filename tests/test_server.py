@@ -17,9 +17,10 @@ class TestSkillResource:
     async def test_initialize_returns_instructions(self, mcp_server):
         """Server instructions reference the skill resource."""
         async with Client(mcp_server) as client:
-            result = await client.initialize()
-            assert result.instructions is not None
-            assert "skill://example/usage" in result.instructions
+            # client.instructions reads whichever negotiation result the protocol era
+            # produced; client.initialize() raises on the modern (server/discover) era.
+            assert client.instructions is not None
+            assert "skill://example/usage" in client.instructions
 
     @pytest.mark.asyncio
     async def test_skill_resource_listed(self, mcp_server):
