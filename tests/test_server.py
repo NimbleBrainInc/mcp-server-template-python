@@ -90,3 +90,21 @@ class TestMCPTools:
             async with Client(mcp_server) as client:
                 with pytest.raises(ToolError, match="401"):
                     await client.call_tool("list_items", {})
+
+    @pytest.mark.asyncio
+    async def test_get_item_api_error(self, mcp_server, mock_client):
+        """An API failure reaches the caller as a tool error carrying the status."""
+        mock_client.get_item.side_effect = ExampleAPIError(404, "Not found")
+        with patch("mcp_example.server.get_client", return_value=mock_client):
+            async with Client(mcp_server) as client:
+                with pytest.raises(ToolError, match="404"):
+                    await client.call_tool("get_item", {"item_id": "missing"})
+
+    @pytest.mark.asyncio
+    async def test_missing_api_key_is_a_tool_error(self, mcp_server, monkeypatch):
+        """Without EXAMPLE_API_KEY the caller sees why the tool failed."""
+        monkeypatch.delenv("EXAMPLE_API_KEY", raising=False)
+        monkeypatch.setattr("mcp_example.server._client", None)
+        async with Client(mcp_server) as client:
+            with pytest.raises(ToolError, match="EXAMPLE_API_KEY"):
+                await client.call_tool("list_items", {})
