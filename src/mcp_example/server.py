@@ -16,13 +16,16 @@ import os
 import sys
 from importlib.resources import files
 
-from fastmcp import Context, FastMCP
+from fastmcp import FastMCP
+from fastmcp.exceptions import ToolError
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from mcp_example.api_client import ExampleAPIError, ExampleClient
 
-# Logging setup - all logs to stderr (stdout is reserved for JSON-RPC)
+# Logging setup - all logs to stderr (stdout is reserved for JSON-RPC). Diagnostics go
+# here, never to the client: MCP's logging capability is deprecated as of the 2026-07-28
+# protocol (SEP-2577). A failure the caller must see is raised as a ToolError.
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
@@ -47,16 +50,18 @@ mcp = FastMCP(
 _client: ExampleClient | None = None
 
 
-async def get_client(ctx: Context | None = None) -> ExampleClient:
-    """Get or create the API client instance."""
+async def get_client() -> ExampleClient:
+    """Get or create the API client instance.
+
+    Raises:
+        ToolError: when EXAMPLE_API_KEY is not set, so the caller sees why the tool failed.
+    """
     global _client
     if _client is None:
         api_key = os.environ.get("EXAMPLE_API_KEY")
         if not api_key:
-            msg = "EXAMPLE_API_KEY environment variable is required"
-            if ctx:
-                await ctx.error(msg)
-            raise ValueError(msg)
+            logger.error("EXAMPLE_API_KEY is not set")
+            raise ToolError("EXAMPLE_API_KEY environment variable is required")
         _client = ExampleClient(api_key=api_key)
     return _client
 
@@ -76,47 +81,41 @@ async def health_check(request: Request) -> JSONResponse:
 @mcp.tool()
 async def list_items(
     limit: int = 20,
-    ctx: Context | None = None,
 ) -> list[dict]:
     """List items from the Example API.
 
     Args:
         limit: Maximum number of items to return (1-100, default 20)
-        ctx: MCP context for logging
 
     Returns:
         List of items
     """
-    client = await get_client(ctx)
+    client = await get_client()
     try:
         return await client.list_items(limit=limit)
     except ExampleAPIError as e:
-        if ctx:
-            await ctx.error(f"API error: {e.message}")
-        raise
+        logger.warning("list_items failed: %s", e)
+        raise ToolError(str(e)) from e
 
 
 @mcp.tool()
 async def get_item(
     item_id: str,
-    ctx: Context | None = None,
 ) -> dict:
     """Get a single item by ID.
 
     Args:
         item_id: The unique identifier of the item
-        ctx: MCP context for logging
 
     Returns:
         Item details
     """
-    client = await get_client(ctx)
+    client = await get_client()
     try:
         return await client.get_item(item_id)
     except ExampleAPIError as e:
-        if ctx:
-            await ctx.error(f"API error: {e.message}")
-        raise
+        logger.warning("get_item failed: %s", e)
+        raise ToolError(str(e)) from e
 
 
 # ============================================================================

@@ -22,6 +22,7 @@ src/mcp_example/
       mcp.run()  # Stdio for Claude Desktop / mpak
   ```
 - All logs to stderr (stdout is reserved for JSON-RPC)
+- A failure the caller must see is a raised `ToolError`; never log to the client with `ctx.info`/`ctx.error` (MCP's logging capability is deprecated as of 2026-07-28, SEP-2577)
 
 ## user_config
 
