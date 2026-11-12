@@ -49,7 +49,6 @@ npx skills add nimblebraininc/skills --skill mcpb --agent claude-code -y
 - Clear docstrings with Args/Returns sections
 - Report a failure the caller must see by raising `ToolError` (from `fastmcp.exceptions`) with a message safe to show, and log diagnostics to stderr with the `logging` module. Do not send logs to the client (`ctx.info`, `ctx.error`): MCP's logging capability is deprecated as of the 2026-07-28 protocol (SEP-2577)
 - Return Pydantic models, not raw dicts
-- Catch API errors and log via context
 
 ### Code Quality
 
