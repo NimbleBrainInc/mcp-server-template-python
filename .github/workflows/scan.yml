@@ -36,11 +36,11 @@ jobs:
           with open('scan-results.json') as f:
               results = json.load(f)
           findings = results.get('findings', [])
-          critical_high = [f for f in findings if f.get('severity') in ('CRITICAL', 'HIGH')]
+          critical_high = [f for f in findings if str(f.get('severity', '')).upper() in ('CRITICAL', 'HIGH')]
           if critical_high:
               print(f'FAIL: {len(critical_high)} critical/high findings')
               for f in critical_high:
-                  print(f'  [{f[\"severity\"]}] {f.get(\"control\", \"\")} - {f.get(\"message\", \"\")}')
+                  print(f'  [{str(f[\"severity\"]).upper()}] {f.get(\"control\", \"\")} - {f.get(\"title\") or f.get(\"message\", \"\")}')
               sys.exit(1)
           print(f'PASS: No critical/high findings ({len(findings)} total findings)')
           "
