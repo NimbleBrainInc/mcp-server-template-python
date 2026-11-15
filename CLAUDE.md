@@ -20,10 +20,10 @@ The server is built on `nimblebrain-server-sdk` ([quickstart](https://docs.nimbl
 Use it instead of writing these by hand:
 
 - **Annotations**: every tool carries `READS`, `ADDS` or `CHANGES` (`@mcp.tool(annotations=READS)`). A tool with none reads to a client as a destructive write.
-- **Errors**: a tool returns a failure with `to_tool_error(ServiceError(ErrorCode.X, "..."))` from `nimblebrain_server_sdk.errors`. Never return a dict that describes an error, and never raise `ValueError` for a caller's mistake. Classify an API failure with `ServiceError.from_upstream(status, detail=...)`; the API's own text goes in `detail` (logged), never in the message. ([Errors](https://docs.nimblebrain.ai/server-sdk/errors/))
+- **Errors**: a tool reports a failure by raising `ServiceError(ErrorCode.X, "...")` from `nimblebrain_server_sdk.errors`. `add_error_contract(mcp)`, called once where the server is built, returns it to the caller as an error result with its code. Never return a dict that describes an error (a host and a model score it as a success), and never raise `ValueError` for a caller's mistake. Classify an API failure with `ServiceError.from_upstream(status, detail=...)`; the API's own text goes in `detail` (logged), never in the message. ([Errors](https://docs.nimblebrain.ai/server-sdk/errors/))
 - **Skills**: a skill is a directory under `skills/` whose name equals the `name` in its `SKILL.md` frontmatter, registered in the one `add_skills(mcp, [...])` call. Do not serve a `skill://` resource by hand. ([Skills](https://docs.nimblebrain.ai/server-sdk/skills/))
 - **Listings**: a listing tool builds each row with `listing_row`, with a `uri` and a preview in place of any unbounded text field. The `uri` must resolve: a resource template (`example://items/{item_id}`) returns the whole record.
-- **Tests**: run each test that crosses the wire on both protocol versions (`Client(mcp, mode="auto")` and `mode="legacy"`), check skills with `served_skills` and listing rows with `assert_bounded_rows`. ([Testing](https://docs.nimblebrain.ai/server-sdk/testing/))
+- **Tests**: run each test that crosses the wire on both protocol versions (`Client(mcp, mode="auto")` and `mode="legacy"`), annotate the parametrized `mode` with `Mode` from `nimblebrain_server_sdk.testing`, check skills with `served_skills` and listing rows with `assert_bounded_rows`. ([Testing](https://docs.nimblebrain.ai/server-sdk/testing/))
 
 ## Critical
 
@@ -36,7 +36,7 @@ Use it instead of writing these by hand:
       mcp.run()  # Stdio for Claude Desktop / mpak
   ```
 - All logs to stderr (stdout is reserved for JSON-RPC)
-- A failure the caller must see is returned with `to_tool_error`; never log to the client with `ctx.info`/`ctx.error` (MCP's logging capability is deprecated as of 2026-07-28, SEP-2577)
+- A failure the caller must see is a raised `ServiceError`; never log to the client with `ctx.info`/`ctx.error` (MCP's logging capability is deprecated as of 2026-07-28, SEP-2577)
 
 ## user_config
 

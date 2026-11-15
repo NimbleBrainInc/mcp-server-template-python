@@ -24,8 +24,14 @@ from typing import Any
 
 from fastmcp import FastMCP
 from fastmcp.exceptions import ResourceError
-from nimblebrain_server_sdk import PREVIEW_CHARS, READS, add_skills, listing_row
-from nimblebrain_server_sdk.errors import ErrorCode, ServiceError, to_tool_error
+from nimblebrain_server_sdk import (
+    PREVIEW_CHARS,
+    READS,
+    add_error_contract,
+    add_skills,
+    listing_row,
+)
+from nimblebrain_server_sdk.errors import ErrorCode, ServiceError
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
@@ -33,7 +39,7 @@ from mcp_example.api_client import ExampleAPIError, ExampleClient
 
 # Logging setup - all logs to stderr (stdout is reserved for JSON-RPC). Diagnostics go
 # here, never to the client: MCP's logging capability is deprecated as of the 2026-07-28
-# protocol (SEP-2577). A failure the caller must see is returned with to_tool_error.
+# protocol (SEP-2577). A failure the caller must see is a raised ServiceError.
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
@@ -57,6 +63,8 @@ mcp = FastMCP(
         "for tool selection guidance and workflow patterns."
     ),
 )
+# A ServiceError a tool raises reaches the caller as an error result with its code.
+add_error_contract(mcp)
 add_skills(mcp, [SKILLS_DIR / "example"])
 
 # Global client instance (lazy initialization)
@@ -104,7 +112,9 @@ async def health_check(request: Request) -> JSONResponse:
 # nothing) or CHANGES (a write that overwrites or removes). A tool with no
 # annotation reads to a client as a destructive write.
 #
-# A failure is returned, never raised: `return to_tool_error(ServiceError(...))`.
+# A tool reports a failure by raising ServiceError, and add_error_contract returns
+# it to the caller as an error result. Never return a dict that describes an error:
+# a host and a model score it as a success.
 # ============================================================================
 
 
@@ -123,16 +133,12 @@ async def list_items(
         the whole item.
     """
     if not 1 <= limit <= MAX_LIMIT:
-        return to_tool_error(
-            ServiceError(ErrorCode.BAD_INPUT, f"`limit` must be between 1 and {MAX_LIMIT}.")
-        )
+        raise ServiceError(ErrorCode.BAD_INPUT, f"`limit` must be between 1 and {MAX_LIMIT}.")
     try:
         client = await get_client()
         items = await client.list_items(limit=limit)
-    except ServiceError as e:
-        return to_tool_error(e)
     except ExampleAPIError as e:
-        return to_tool_error(upstream_error(e))
+        raise upstream_error(e) from e
     # A page holds many rows, so an unbounded field leaves each row as a preview.
     return [
         listing_row(
@@ -170,10 +176,7 @@ async def get_item(
     Returns:
         Item details
     """
-    try:
-        return await read_item(item_id)
-    except ServiceError as e:
-        return to_tool_error(e)
+    return await read_item(item_id)
 
 
 # ============================================================================
@@ -189,8 +192,9 @@ async def item_resource(item_id: str) -> str:
     try:
         return json.dumps(await read_item(item_id))
     except ServiceError as e:
-        # A resource read has no tool result to carry the error envelope, so the failure
-        # is the read's error, with the same message safe to show.
+        # add_error_contract covers tool calls. A resource read has no result to carry
+        # the error envelope, so the failure is the read's error, with the same message
+        # safe to show.
         raise ResourceError(e.message) from e
 
 
