@@ -22,7 +22,7 @@ Use it instead of writing these by hand:
 - **Annotations**: every tool carries `READS`, `ADDS` or `CHANGES` (`@mcp.tool(annotations=READS)`). A tool with none reads to a client as a destructive write.
 - **Errors**: a tool returns a failure with `to_tool_error(ServiceError(ErrorCode.X, "..."))` from `nimblebrain_server_sdk.errors`. Never return a dict that describes an error, and never raise `ValueError` for a caller's mistake. Classify an API failure with `ServiceError.from_upstream(status, detail=...)`; the API's own text goes in `detail` (logged), never in the message. ([Errors](https://docs.nimblebrain.ai/server-sdk/errors/))
 - **Skills**: a skill is a directory under `skills/` whose name equals the `name` in its `SKILL.md` frontmatter, registered in the one `add_skills(mcp, [...])` call. Do not serve a `skill://` resource by hand. ([Skills](https://docs.nimblebrain.ai/server-sdk/skills/))
-- **Listings**: a listing tool builds each row with `listing_row`, with a `uri` and a preview in place of any unbounded text field.
+- **Listings**: a listing tool builds each row with `listing_row`, with a `uri` and a preview in place of any unbounded text field. The `uri` must resolve: a resource template (`example://items/{item_id}`) returns the whole record.
 - **Tests**: run each test that crosses the wire on both protocol versions (`Client(mcp, mode="auto")` and `mode="legacy"`), check skills with `served_skills` and listing rows with `assert_bounded_rows`. ([Testing](https://docs.nimblebrain.ai/server-sdk/testing/))
 
 ## Critical

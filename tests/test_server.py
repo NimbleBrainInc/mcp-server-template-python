@@ -4,10 +4,12 @@ A host may connect on either protocol era, so every test that crosses the wire r
 both: `"auto"` negotiates 2026-07-28 and `"legacy"` runs the 2025-11-25 handshake.
 """
 
+import json
 from unittest.mock import patch
 
 import pytest
 from fastmcp import Client
+from mcp.shared.exceptions import MCPError
 from nimblebrain_server_sdk.testing import assert_bounded_rows, served_skills
 
 from mcp_example.api_client import ExampleAPIError
@@ -88,6 +90,38 @@ class TestTools:
                 result = await client.call_tool("get_item", {"item_id": "1"})
         mock_client.get_item.assert_called_once_with("1")
         assert result.data == {"id": "1", "name": "Item 1", "description": LONG_DESCRIPTION}
+
+
+@pytest.mark.parametrize("mode", MODES)
+class TestItemResource:
+    """The address a listing row carries reads back the whole record."""
+
+    async def test_a_row_uri_reads_the_whole_item(self, mcp_server, mock_client, mode):
+        """Reading the uri from a list_items row returns what get_item returns."""
+        with patch("mcp_example.server.get_client", return_value=mock_client):
+            async with Client(mcp_server, mode=mode) as client:
+                rows = (await client.call_tool("list_items", {})).data
+                (content,) = await client.read_resource(rows[0]["uri"])
+                item = (await client.call_tool("get_item", {"item_id": rows[0]["id"]})).data
+        assert content.mime_type == "application/json"
+        assert json.loads(content.text) == item
+        assert item["description"] == LONG_DESCRIPTION
+
+    async def test_the_item_address_is_listed(self, mcp_server, mode):
+        """A host finds the address shape in the resource templates."""
+        async with Client(mcp_server, mode=mode) as client:
+            templates = await client.list_resource_templates()
+        assert [t.uri_template for t in templates] == ["example://items/{item_id}"]
+
+    async def test_a_missing_item_fails_the_read(self, mcp_server, mock_client, mode):
+        """A failed read carries the classified message, not the API's own text."""
+        mock_client.get_item.side_effect = ExampleAPIError(404, "no row in items_v2")
+        with patch("mcp_example.server.get_client", return_value=mock_client):
+            async with Client(mcp_server, mode=mode) as client:
+                with pytest.raises(MCPError) as failure:
+                    await client.read_resource("example://items/missing")
+        assert "The requested resource was not found." in str(failure.value)
+        assert "items_v2" not in str(failure.value)
 
 
 async def call_for_error(mcp_server, mode, tool, arguments):

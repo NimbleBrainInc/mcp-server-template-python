@@ -68,7 +68,8 @@ Add to your `~/.claude/settings.json`:
 | `list_items` | List items from the API with optional limit. Each row carries a `uri` and a preview of the description |
 | `get_item` | Get a single item, whole, by its ID |
 
-Both tools read and change nothing, and say so with the `READS` annotation. The server also
+Both tools read and change nothing, and say so with the `READS` annotation. A row's `uri`
+(`example://items/<id>`) is a resource that returns the whole item as JSON. The server also
 serves one skill, `skill://example/SKILL.md`, which tells an agent when to use each tool.
 
 ## Built on the NimbleBrain server SDK

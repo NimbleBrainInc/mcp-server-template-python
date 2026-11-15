@@ -15,6 +15,7 @@ The server is built on nimblebrain-server-sdk: tool annotations, the error contr
 skills come from it. Guide: https://docs.nimblebrain.ai/server-sdk/quickstart/
 """
 
+import json
 import logging
 import os
 import sys
@@ -22,6 +23,7 @@ from pathlib import Path
 from typing import Any
 
 from fastmcp import FastMCP
+from fastmcp.exceptions import ResourceError
 from nimblebrain_server_sdk import PREVIEW_CHARS, READS, add_skills, listing_row
 from nimblebrain_server_sdk.errors import ErrorCode, ServiceError, to_tool_error
 from starlette.requests import Request
@@ -117,7 +119,8 @@ async def list_items(
 
     Returns:
         One row per item. A row carries the item's `uri` and a `description_preview`
-        in place of the full description; `get_item` returns the whole item.
+        in place of the full description. `get_item`, or a read of the `uri`, returns
+        the whole item.
     """
     if not 1 <= limit <= MAX_LIMIT:
         return to_tool_error(
@@ -140,6 +143,21 @@ async def list_items(
     ]
 
 
+async def read_item(item_id: str) -> dict[str, Any]:
+    """Read one whole item, for the tool and the resource that both return it.
+
+    Raises:
+        ServiceError: classified, with a message safe to show the caller.
+    """
+    if not item_id.strip():
+        raise ServiceError(ErrorCode.BAD_INPUT, "`item_id` is empty.")
+    try:
+        client = await get_client()
+        return await client.get_item(item_id)
+    except ExampleAPIError as e:
+        raise upstream_error(e) from e
+
+
 @mcp.tool(annotations=READS)
 async def get_item(
     item_id: str,
@@ -152,15 +170,28 @@ async def get_item(
     Returns:
         Item details
     """
-    if not item_id.strip():
-        return to_tool_error(ServiceError(ErrorCode.BAD_INPUT, "`item_id` is empty."))
     try:
-        client = await get_client()
-        return await client.get_item(item_id)
+        return await read_item(item_id)
     except ServiceError as e:
         return to_tool_error(e)
-    except ExampleAPIError as e:
-        return to_tool_error(upstream_error(e))
+
+
+# ============================================================================
+# Resources
+# ============================================================================
+
+
+# The address a `list_items` row carries in `uri`. A row is a summary, so its uri must
+# read back the whole record.
+@mcp.resource("example://items/{item_id}", name="item", mime_type="application/json")
+async def item_resource(item_id: str) -> str:
+    """One whole item, as JSON: the same record `get_item` returns."""
+    try:
+        return json.dumps(await read_item(item_id))
+    except ServiceError as e:
+        # A resource read has no tool result to carry the error envelope, so the failure
+        # is the read's error, with the same message safe to show.
+        raise ResourceError(e.message) from e
 
 
 # ============================================================================

@@ -13,7 +13,7 @@ description: How to find and read items with the Example server's tools. Use whe
 ## Context Reuse
 
 - `list_items` rows carry `id`. Pass it to `get_item` as `item_id`.
-- A row's `description_preview` is cut short. Call `get_item` before quoting or summarizing a description.
+- A row's `description_preview` is cut short. Call `get_item`, or read the row's `uri`, before quoting or summarizing a description.
 
 ## Workflows
 
