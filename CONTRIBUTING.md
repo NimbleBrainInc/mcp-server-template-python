@@ -39,15 +39,17 @@ npx skills add nimblebraininc/skills --skill mcpb --agent claude-code -y
 
 1. **Add response models** to `src/mcp_example/api_models.py`
 2. **Add client methods** to `src/mcp_example/api_client.py`
-3. **Add the tool** to `src/mcp_example/server.py` using `@mcp.tool()`
-4. **Add tests** to `tests/`
-5. **Run checks**: `make check`
+3. **Add the tool** to `src/mcp_example/server.py` using `@mcp.tool(annotations=...)`
+4. **Describe the tool** in `src/mcp_example/skills/example/SKILL.md`
+5. **Add tests** to `tests/`, run on both protocol versions
+6. **Run checks**: `make check`
 
 ### Tool Design Guidelines
 
 - One tool per API operation (`list_items`, `get_item`, `create_item`)
 - Clear docstrings with Args/Returns sections
-- Report a failure the caller must see by raising `ToolError` (from `fastmcp.exceptions`) with a message safe to show, and log diagnostics to stderr with the `logging` module. Do not send logs to the client (`ctx.info`, `ctx.error`): MCP's logging capability is deprecated as of the 2026-07-28 protocol (SEP-2577)
+- Annotate every tool with `READS`, `ADDS` or `CHANGES` from `nimblebrain_server_sdk`
+- Report a failure the caller must see by returning `to_tool_error(ServiceError(ErrorCode.X, "..."))` (from `nimblebrain_server_sdk.errors`) with a message safe to show, and log diagnostics to stderr with the `logging` module. See the [errors guide](https://docs.nimblebrain.ai/server-sdk/errors/). Do not send logs to the client (`ctx.info`, `ctx.error`): MCP's logging capability is deprecated as of the 2026-07-28 protocol (SEP-2577)
 - Return Pydantic models, not raw dicts
 
 ### Code Quality
@@ -89,6 +91,6 @@ Or simply: `make check`
 - MTF scanner passes (no critical/high findings)
 
 ### For Companion Skills
-- SKILL.md with complete frontmatter
+- A directory under `src/mcp_example/skills/` named after the skill, holding a `SKILL.md` whose frontmatter has that `name` and a `description`, registered with `add_skills`
 - Composes 2+ tools into a workflow
 - At least 2 usage examples
