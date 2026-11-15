@@ -81,22 +81,25 @@ for what every server on NimbleBrain shares. Start with the
 | The server does this | With | Guide |
 |---|---|---|
 | Declares what each tool can change | `READS`, `ADDS`, `CHANGES` | [Quickstart](https://docs.nimblebrain.ai/server-sdk/quickstart/) |
-| Returns a failure with a code the caller can act on | `to_tool_error`, `ServiceError`, `ErrorCode` | [Errors](https://docs.nimblebrain.ai/server-sdk/errors/) |
+| Returns a failure with a code the caller can act on | `add_error_contract`, `ServiceError`, `ErrorCode` | [Errors](https://docs.nimblebrain.ai/server-sdk/errors/) |
 | Serves the skill in `src/mcp_example/skills/` | `add_skills` | [Skills](https://docs.nimblebrain.ai/server-sdk/skills/) |
-| Tests what a host sees, on both protocol versions | `served_skills`, `assert_bounded_rows` | [Testing](https://docs.nimblebrain.ai/server-sdk/testing/) |
+| Tests what a host sees, on both protocol versions | `Mode`, `served_skills`, `assert_bounded_rows` | [Testing](https://docs.nimblebrain.ai/server-sdk/testing/) |
 
 ### A tool
 
 A tool carries one annotation: `READS`, `ADDS` (a write that loses nothing) or `CHANGES` (a
-write that overwrites or removes). It returns a failure with `to_tool_error`; it does not
-return a dict that describes the error, and it does not raise for a caller's mistake.
+write that overwrites or removes). It reports a failure by raising `ServiceError`, and
+`add_error_contract`, called once where the server is built, returns it to the caller as an
+error result. A tool never returns a dict that describes an error: a host and a model score
+that as a success.
 
 ```python
 from fastmcp import FastMCP
-from nimblebrain_server_sdk import ADDS
-from nimblebrain_server_sdk.errors import ErrorCode, ServiceError, to_tool_error
+from nimblebrain_server_sdk import ADDS, add_error_contract
+from nimblebrain_server_sdk.errors import ErrorCode, ServiceError
 
 mcp = FastMCP("Example")
+add_error_contract(mcp)
 
 ITEMS: dict[str, str] = {}
 
@@ -105,7 +108,7 @@ ITEMS: dict[str, str] = {}
 async def create_item(name: str) -> dict[str, str]:
     """Create an item and return it."""
     if not name.strip():
-        return to_tool_error(ServiceError(ErrorCode.BAD_INPUT, "`name` is empty."))
+        raise ServiceError(ErrorCode.BAD_INPUT, "`name` is empty.")
     item_id = str(len(ITEMS) + 1)
     ITEMS[item_id] = name
     return {"id": item_id, "name": name}
@@ -134,24 +137,25 @@ add_skills(mcp, [Path("src/mcp_example/skills/example")])
 
 A host connects on one of two protocol versions, so a test runs on both:
 `Client(mcp, mode="auto")` negotiates 2026-07-28 and `mode="legacy"` runs the 2025-11-25
-handshake. `served_skills` reads every skill file back the way a host does.
+handshake. `Mode` is the type of that parameter. `served_skills` reads every skill file back
+the way a host does.
 
 ```python
 import pytest
 from fastmcp import Client
-from nimblebrain_server_sdk.testing import served_skills
+from nimblebrain_server_sdk.testing import Mode, served_skills
 
 from mcp_example.server import mcp
 
 
 @pytest.mark.parametrize("mode", ["auto", "legacy"])
-async def test_the_skill_is_served(mode):
+async def test_the_skill_is_served(mode: Mode) -> None:
     skills = await served_skills(mcp, mode)
     assert set(skills) == {"skill://example/SKILL.md"}
 
 
 @pytest.mark.parametrize("mode", ["auto", "legacy"])
-async def test_an_empty_item_id_is_bad_input(mode):
+async def test_an_empty_item_id_is_bad_input(mode: Mode) -> None:
     async with Client(mcp, mode=mode) as client:
         result = await client.call_tool("get_item", {"item_id": " "}, raise_on_error=False)
     assert result.is_error

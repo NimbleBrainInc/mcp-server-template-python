@@ -49,7 +49,7 @@ npx skills add nimblebraininc/skills --skill mcpb --agent claude-code -y
 - One tool per API operation (`list_items`, `get_item`, `create_item`)
 - Clear docstrings with Args/Returns sections
 - Annotate every tool with `READS`, `ADDS` or `CHANGES` from `nimblebrain_server_sdk`
-- Report a failure the caller must see by returning `to_tool_error(ServiceError(ErrorCode.X, "..."))` (from `nimblebrain_server_sdk.errors`) with a message safe to show, and log diagnostics to stderr with the `logging` module. See the [errors guide](https://docs.nimblebrain.ai/server-sdk/errors/). Do not send logs to the client (`ctx.info`, `ctx.error`): MCP's logging capability is deprecated as of the 2026-07-28 protocol (SEP-2577)
+- Report a failure the caller must see by raising `ServiceError(ErrorCode.X, "...")` (from `nimblebrain_server_sdk.errors`) with a message safe to show; `add_error_contract(mcp)` returns it to the caller as an error result. Never return an error as a plain dict: a host and a model score it as a success. Log diagnostics to stderr with the `logging` module. See the [errors guide](https://docs.nimblebrain.ai/server-sdk/errors/). Do not send logs to the client (`ctx.info`, `ctx.error`): MCP's logging capability is deprecated as of the 2026-07-28 protocol (SEP-2577)
 - Return Pydantic models, not raw dicts
 
 ### Code Quality
