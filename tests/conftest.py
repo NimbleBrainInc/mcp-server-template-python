@@ -6,6 +6,9 @@ import pytest
 
 from mcp_example.server import mcp
 
+# Longer than any listing row may carry, so a row that leaks it fails assert_bounded_rows.
+LONG_DESCRIPTION = "A long description. " * 100
+
 
 @pytest.fixture
 def mcp_server():
@@ -19,15 +22,15 @@ def mock_client():
     client = AsyncMock()
     client.list_items = AsyncMock(
         return_value=[
-            {"id": "1", "name": "Item 1"},
-            {"id": "2", "name": "Item 2"},
+            {"id": "1", "name": "Item 1", "description": LONG_DESCRIPTION},
+            {"id": "2", "name": "Item 2", "description": LONG_DESCRIPTION},
         ]
     )
     client.get_item = AsyncMock(
         return_value={
             "id": "1",
             "name": "Item 1",
-            "description": "Test item",
+            "description": LONG_DESCRIPTION,
         }
     )
     return client
