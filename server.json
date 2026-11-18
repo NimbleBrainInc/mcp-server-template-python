@@ -1,7 +1,17 @@
 {
-  "name": "@nimblebraininc/example",
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "com.example/example",
+  "title": "Example",
+  "description": "List and read items from the Example API.",
   "version": "0.1.0",
-  "description": "MCP server for the Example API",
-  "publisher": "nimblebraininc",
-  "repository": "https://github.com/NimbleBrainInc/mcp-example"
+  "repository": {
+    "url": "https://github.com/NimbleBrainInc/mcp-example",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.example.com/mcp"
+    }
+  ]
 }

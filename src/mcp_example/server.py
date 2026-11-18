@@ -5,7 +5,8 @@ implement the tools for your API.
 
 Getting started:
 1. Rename this package from mcp_example to mcp_<yourservice>
-2. Update manifest.json, server.json, pyproject.toml with your service info
+2. Update manifest.json, server.json, pyproject.toml with your service info, and the
+   server's name, TITLE and DESCRIPTION below (server.json restates them)
 3. Implement your API client in api_client.py
 4. Add Pydantic models in api_models.py
 5. Add tools below using @mcp.tool(annotations=...)
@@ -28,6 +29,7 @@ from nimblebrain_server_sdk import (
     PREVIEW_CHARS,
     READS,
     add_error_contract,
+    add_server_card,
     add_skills,
     listing_row,
 )
@@ -35,6 +37,7 @@ from nimblebrain_server_sdk.errors import ErrorCode, ServiceError
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
+from mcp_example import __version__
 from mcp_example.api_client import ExampleAPIError, ExampleClient
 
 # Logging setup - all logs to stderr (stdout is reserved for JSON-RPC). Diagnostics go
@@ -55,9 +58,15 @@ SKILLS_DIR = Path(__file__).parent / "skills"
 
 MAX_LIMIT = 100
 
-# Create MCP server
+# The Server Card's title and description, restated in server.json (a test holds them equal).
+TITLE = "Example"
+DESCRIPTION = "List and read items from the Example API."
+
+# The name is reverse-DNS (the Server Card and the MCP Registry require it), and the version
+# is the package's own: without `version=`, FastMCP reports its own version as the server's.
 mcp = FastMCP(
-    "Example",
+    "com.example/example",
+    version=__version__,
     instructions=(
         "Before using tools, read the skill://example/SKILL.md resource "
         "for tool selection guidance and workflow patterns."
@@ -66,6 +75,9 @@ mcp = FastMCP(
 # A ServiceError a tool raises reaches the caller as an error result with its code.
 add_error_contract(mcp)
 add_skills(mcp, [SKILLS_DIR / "example"])
+# What a host reads, at <mcp-url>/server-card, before it connects. A connector has no
+# placements; an app's server passes `placements=[...]` for its ui:// views.
+add_server_card(mcp, title=TITLE, description=DESCRIPTION)
 
 # Global client instance (lazy initialization)
 _client: ExampleClient | None = None

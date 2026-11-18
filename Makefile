@@ -1,6 +1,10 @@
 # MCPB bundle configuration
 BUNDLE_NAME = mcp-example
 VERSION ?= 0.1.0
+# run-http binds loopback. On Linux, a NimbleBrain in Docker reaches the host through the
+# Docker bridge: HOST=172.17.0.1, or HOST=0.0.0.0, which also exposes the server to the network.
+HOST ?= 127.0.0.1
+PORT ?= 8000
 
 .PHONY: help install dev-install format format-check lint lint-fix typecheck test test-integration test-llm test-cov clean run run-http check all bump bundle
 
@@ -57,8 +61,8 @@ clean: ## Clean up build artifacts and cache
 run: ## Run the MCP server in stdio mode
 	uv run python -m mcp_example.server
 
-run-http: ## Run the MCP server in HTTP mode
-	uv run uvicorn mcp_example.server:app --host 0.0.0.0 --port 8000
+run-http: ## Run the MCP server over HTTP at http://$(HOST):$(PORT)/mcp (HOST defaults to 127.0.0.1)
+	uv run uvicorn mcp_example.server:app --host $(HOST) --port $(PORT)
 
 check: format-check lint typecheck test ## Run all checks
 

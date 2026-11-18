@@ -7,7 +7,7 @@ An MCP (Model Context Protocol) server that provides access to the Example API, 
 - List and retrieve items from the Example API
 - Async HTTP client with error handling
 - Typed responses with Pydantic models
-- Built on the [NimbleBrain server SDK](#built-on-the-nimblebrain-server-sdk): annotated tools, classified errors, and a skill served to the host
+- Built on the [NimbleBrain server SDK](#built-on-the-nimblebrain-server-sdk): annotated tools, classified errors, a skill served to the host, and a Server Card
 
 ## Installation
 
@@ -83,6 +83,7 @@ for what every server on NimbleBrain shares. Start with the
 | Declares what each tool can change | `READS`, `ADDS`, `CHANGES` | [Quickstart](https://docs.nimblebrain.ai/server-sdk/quickstart/) |
 | Returns a failure with a code the caller can act on | `add_error_contract`, `ServiceError`, `ErrorCode` | [Errors](https://docs.nimblebrain.ai/server-sdk/errors/) |
 | Serves the skill in `src/mcp_example/skills/` | `add_skills` | [Skills](https://docs.nimblebrain.ai/server-sdk/skills/) |
+| Names and describes itself to a host before it connects | `add_server_card` | [Server Card](https://docs.nimblebrain.ai/server-sdk/server-card/) |
 | Tests what a host sees, on both protocol versions | `Mode`, `served_skills`, `assert_bounded_rows` | [Testing](https://docs.nimblebrain.ai/server-sdk/testing/) |
 
 ### A tool
@@ -98,7 +99,7 @@ from fastmcp import FastMCP
 from nimblebrain_server_sdk import ADDS, add_error_contract
 from nimblebrain_server_sdk.errors import ErrorCode, ServiceError
 
-mcp = FastMCP("Example")
+mcp = FastMCP("com.example/example", version="0.1.0")
 add_error_contract(mcp)
 
 ITEMS: dict[str, str] = {}
@@ -129,7 +130,7 @@ from pathlib import Path
 from fastmcp import FastMCP
 from nimblebrain_server_sdk import add_skills
 
-mcp = FastMCP("Example")
+mcp = FastMCP("com.example/example", version="0.1.0")
 add_skills(mcp, [Path("src/mcp_example/skills/example")])
 ```
 
@@ -164,6 +165,37 @@ async def test_an_empty_item_id_is_bad_input(mode: Mode) -> None:
 
 `tests/test_server.py` holds the full set.
 
+### A Server Card
+
+A host that has only the server's URL reads its Server Card, at `<mcp-url>/server-card`,
+to name and describe it before it connects. `name` and `version` come from the `FastMCP`
+constructor, so the server is named in reverse-DNS form and given its own version (without
+`version=`, FastMCP reports its own). `title` and `description` are 1 to 100 characters:
+
+```python
+from fastmcp import FastMCP
+from nimblebrain_server_sdk import add_server_card
+
+from mcp_example import __version__
+
+mcp = FastMCP("com.example/example", version=__version__)
+add_server_card(mcp, title="Example", description="List and read items from the Example API.")
+```
+
+The card is served over streamable HTTP only: `make run-http`, then
+`curl -s http://127.0.0.1:8000/mcp/server-card`. This server is a connector, so the card has
+no `placements`; an app's server passes them for its `ui://` views.
+
+## Deploying: server.json
+
+`server.json` is an [MCP Registry `ServerDetail`](https://github.com/modelcontextprotocol/registry/blob/main/docs/reference/server-json/generic-server-json.md):
+what an operator adds to a deployed NimbleBrain's
+[connectors catalog](https://docs.nimblebrain.ai/config/connectors-catalog/), and what
+`mcp-publisher` lists on the official MCP Registry. It restates the card's `name`, `title`,
+`description` and `version`, and adds `remotes`, the URL the server is deployed at. Replace
+the placeholder `https://mcp.example.com/mcp` with yours. `tests/test_server_card.py` fails
+when `server.json` and the served card disagree, and `make bump` moves both versions together.
+
 ## Development
 
 ```bash
@@ -184,7 +216,14 @@ uv run ty check src/
 
 # Run all checks
 make check
+
+# Serve over HTTP at http://127.0.0.1:8000/mcp
+make run-http
 ```
+
+`make run-http` binds loopback. On Linux, a NimbleBrain running in Docker reaches the host
+through the Docker bridge: `make run-http HOST=172.17.0.1`, or `HOST=0.0.0.0`, which also
+exposes the server to the network.
 
 ## License
 

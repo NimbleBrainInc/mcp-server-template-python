@@ -23,11 +23,13 @@ Use it instead of writing these by hand:
 - **Errors**: a tool reports a failure by raising `ServiceError(ErrorCode.X, "...")` from `nimblebrain_server_sdk.errors`. `add_error_contract(mcp)`, called once where the server is built, returns it to the caller as an error result with its code. Never return a dict that describes an error (a host and a model score it as a success), and never raise `ValueError` for a caller's mistake. Classify an API failure with `ServiceError.from_upstream(status, detail=...)`; the API's own text goes in `detail` (logged), never in the message. ([Errors](https://docs.nimblebrain.ai/server-sdk/errors/))
 - **Skills**: a skill is a directory under `skills/` whose name equals the `name` in its `SKILL.md` frontmatter, registered in the one `add_skills(mcp, [...])` call. Do not serve a `skill://` resource by hand. ([Skills](https://docs.nimblebrain.ai/server-sdk/skills/))
 - **Listings**: a listing tool builds each row with `listing_row`, with a `uri` and a preview in place of any unbounded text field. The `uri` must resolve: a resource template (`example://items/{item_id}`) returns the whole record.
+- **Server Card**: `add_server_card(mcp, title=..., description=...)` serves the card a host reads before it connects, at `<mcp-url>/server-card`. `name` and `version` come from `FastMCP("com.example/example", version=__version__)`: the name is reverse-DNS with one slash, and `version=` is required (without it FastMCP reports its own version). A connector passes no `placements`; an app's server passes them for its `ui://` views. ([Server Card](https://docs.nimblebrain.ai/server-sdk/server-card/))
 - **Tests**: run each test that crosses the wire on both protocol versions (`Client(mcp, mode="auto")` and `mode="legacy"`), annotate the parametrized `mode` with `Mode` from `nimblebrain_server_sdk.testing`, check skills with `served_skills` and listing rows with `assert_bounded_rows`. ([Testing](https://docs.nimblebrain.ai/server-sdk/testing/))
 
 ## Critical
 
-- Package name: `@nimblebraininc/example` (npm-style scope, matches GitHub org)
+- Bundle name: `@nimblebraininc/example` in `manifest.json` (npm-style scope, matches GitHub org)
+- Server name: `com.example/example` (reverse-DNS), the same in `FastMCP(...)` and `server.json`
 - Manifest uses module execution: `python -m mcp_example.server`
 - Server needs both entrypoints:
   ```python
@@ -37,6 +39,18 @@ Use it instead of writing these by hand:
   ```
 - All logs to stderr (stdout is reserved for JSON-RPC)
 - A failure the caller must see is a raised `ServiceError`; never log to the client with `ctx.info`/`ctx.error` (MCP's logging capability is deprecated as of 2026-07-28, SEP-2577)
+
+## server.json
+
+`server.json` is an MCP Registry `ServerDetail` (`$schema` names the 2025-12-11
+`server.schema.json`): what an operator adds to a deployed NimbleBrain's connectors catalog
+and what `mcp-publisher` lists on the official MCP Registry. It restates the Server Card's
+`name`, `title`, `description` and `version`, and adds `remotes`, the deployed
+streamable-HTTP URL (a placeholder until the server is deployed). `tests/test_server_card.py`
+holds it equal to the served card.
+
+- A connector carries no `_meta`. An app adds `_meta["ai.nimblebrain/host"]` with the card's placements.
+- Add `packages` only once the server is published to PyPI; the bundle release does not publish one.
 
 ## user_config
 
@@ -74,7 +88,12 @@ uv run ruff check src/ tests/    # Lint
 uv run ty check src/             # Type check
 uv run pytest tests/ -v          # Test
 make check                       # All of the above
+make run-http                    # Serve at http://127.0.0.1:8000/mcp (card at /mcp/server-card)
 ```
+
+`make run-http` binds loopback. On Linux, a NimbleBrain running in Docker reaches the host
+through the Docker bridge: `make run-http HOST=172.17.0.1`, or `HOST=0.0.0.0`, which also
+exposes the server to the network.
 
 ## Version Management
 
@@ -101,6 +120,8 @@ gh release create v0.2.0 --title "v0.2.0" --notes "- changelog"
 GitHub Actions builds and uploads MCPB bundles automatically on release.
 
 ## Adding New Tools
+
+Design the tool first with the `mcp-server` skill (`npx skills add nimblebraininc/skills --skill mcp-server --agent claude-code -y`), then:
 
 1. Add response model to `api_models.py`
 2. Add client method to `api_client.py`
