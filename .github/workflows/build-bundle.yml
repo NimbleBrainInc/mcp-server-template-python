@@ -30,6 +30,12 @@ jobs:
         run: |
           VERSION="${{ github.event.release.tag_name }}"
           VERSION="${VERSION#v}"
+          # The Server Card reports __version__, which only `make bump` moves.
+          PKG_VERSION=$(sed -n 's/^__version__ = "\(.*\)"$/\1/p' src/mcp_example/__init__.py)
+          if [ "$VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::Tag version $VERSION differs from __version__ $PKG_VERSION; run make bump before tagging."
+            exit 1
+          fi
           jq --arg v "$VERSION" '.version = $v' manifest.json > manifest.tmp.json
           mv manifest.tmp.json manifest.json
           if [ -f server.json ]; then
