@@ -20,7 +20,7 @@ classifiers = [
 dependencies = [
     "aiohttp>=3.11.0",
     "fastmcp>=4.0.0",
-    "nimblebrain-server-sdk>=0.7,<0.8",
+    "nimblebrain-server-sdk>=0.8,<0.9",
     "pydantic>=2.0.0",
     "python-dotenv>=1.0.0",
 ]
