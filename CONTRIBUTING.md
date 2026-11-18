@@ -24,12 +24,11 @@ uv sync --dev
 make check
 ```
 
-### Recommended Claude Code Skills
+### Recommended Claude Code Skill
 
-These skills automate common development tasks:
+The `mcpb` skill builds a server from this template end to end:
 
 ```bash
-npx skills add nimblebraininc/skills --skill contributor --agent claude-code -y
 npx skills add nimblebraininc/skills --skill mcpb --agent claude-code -y
 ```
 
